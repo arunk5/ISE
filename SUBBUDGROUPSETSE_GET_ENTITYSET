@@ -1,0 +1,15 @@
+method SUBBUDGROUPSETSE_GET_ENTITYSET.
+  DATA : ls_entity TYPE ZCL_ZIT_EXPENSE_MPC=>TS_SUBBUDGROUPSET.
+
+  CLEAR :ls_entity.
+
+  SELECT sub_bud_doc_id category_doc_id sub_bud_desc
+    FROM zirs_subbudget
+  INTO TABLE et_entityset.
+
+  IF sy-subrc <> 0.
+    ls_entity-msg = 'No data found'.
+    ls_entity-msgtype = 'E'.
+    APPEND ls_entity TO et_entityset.
+  ENDIF.
+endmethod.
