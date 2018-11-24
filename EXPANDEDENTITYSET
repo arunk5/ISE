@@ -1,0 +1,321 @@
+method /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_EXPANDED_ENTITYSET.
+
+DATA :  BEGIN OF ls_deep.
+          INCLUDE TYPE zcl_zit_expense_mpc=>ts_header.
+  DATA:  itemset01 TYPE zcl_zit_expense_mpc=>tt_item.
+  DATA :  END OF ls_deep.
+
+  DATA : lt_deep LIKE TABLE OF ls_deep.
+
+  DATA : ls_header2 TYPE zirs_header,
+         ls_item TYPE zirs_item_mast,
+         ls_item2 TYPE zcl_zit_expense_mpc=>ts_item,
+         lt_item TYPE TABLE OF zirs_item_mast,
+         lt_item2 TYPE zcl_zit_expense_mpc=>tt_item.
+
+  DATA :  ls_key_tab TYPE /iwbep/s_mgw_name_value_pair.
+
+  DATA : ls_filter TYPE /iwbep/s_mgw_select_option,
+         lt_select TYPE /iwbep/t_cod_select_options,
+         ls_select TYPE /iwbep/s_cod_select_option .
+
+  CLEAR : lt_select[],ls_select,ls_filter.
+
+  DATA : gv_docid TYPE zirs_id,
+         gv_reqlist TYPE string,
+         gv_reqlist1 TYPE zirs_id,
+         gv_reqlist2 TYPE zirs_id,
+         gv_reqlist3 TYPE zirs_id,
+         gv_reqlist4 TYPE zirs_id,
+         gv_reqlist5 TYPE zirs_id,
+         gv_reqlist6 TYPE zirs_id,
+         gv_reqlist7 TYPE zirs_id,
+         gv_reqlist8 TYPE zirs_id,
+         gv_reqlist9 TYPE zirs_id,
+         gv_reqlist10 TYPE zirs_id.
+
+  DATA: lc_expand_tech_clause TYPE string VALUE 'ItemSet01' .
+
+  DATA : lt_t163i TYPE TABLE OF t163i,
+         ls_t163i TYPE t163i.
+
+  DATA: BEGIN OF gv_list,
+        sign   TYPE c LENGTH 1,
+        option TYPE c LENGTH 2,
+        low    TYPE zirs_id,
+        high   TYPE zirs_id,
+      END OF gv_list.
+
+  DATA :  gv_tlist LIKE TABLE OF gv_list.
+
+  CLEAR : gv_reqlist,ls_header2,ls_item,ls_item2,lt_item[],lt_item2[].
+
+
+  CASE iv_entity_set_name.
+    WHEN 'HeaderSet'.
+
+      CLEAR : gv_docid.
+
+      READ TABLE it_filter_select_options INTO ls_filter WITH KEY property = 'ItemDocId'.
+      IF sy-subrc = 0.
+        lt_select[] = ls_filter-select_options[].
+        READ TABLE lt_select INTO ls_select INDEX 1.
+        IF sy-subrc = 0.
+          gv_docid = ls_select-low.
+        ENDIF.
+      ENDIF.
+
+      READ TABLE it_filter_select_options INTO ls_filter WITH KEY property = 'Itreqlist'.
+      IF sy-subrc = 0.
+        lt_select[] = ls_filter-select_options[].
+        READ TABLE lt_select INTO ls_select INDEX 1.
+        IF sy-subrc = 0.
+          gv_reqlist = ls_select-low.
+        ENDIF.
+      ENDIF.
+
+      CLEAR : gv_list,gv_tlist[].
+
+      IF gv_reqlist IS NOT INITIAL.
+        SPLIT gv_reqlist AT ',' INTO gv_reqlist1 gv_reqlist2 gv_reqlist3 gv_reqlist4 gv_reqlist5
+                                     gv_reqlist6 gv_reqlist7 gv_reqlist8 gv_reqlist9 gv_reqlist10.
+
+        CLEAR : gv_list.
+        gv_list-sign = 'I'.
+        gv_list-option = 'EQ'.
+        gv_list-low = gv_reqlist1.
+        APPEND gv_list TO gv_tlist.
+
+        IF  gv_reqlist2 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist2.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist3 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist3.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist4 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist4.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist5 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist5.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist6 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist6.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist7 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist7.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist8 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist8.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist9 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist9.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+        IF  gv_reqlist10 IS NOT INITIAL.
+          CLEAR : gv_list.
+          gv_list-sign = 'I'.
+          gv_list-option = 'EQ'.
+          gv_list-low = gv_reqlist10.
+          APPEND gv_list TO gv_tlist.
+        ENDIF.
+
+
+        gv_docid = gv_reqlist1.
+
+      ENDIF.
+
+      SELECT SINGLE * FROM zirs_header
+      INTO CORRESPONDING FIELDS OF ls_header2
+      WHERE item_doc_id = gv_docid.
+
+      IF ls_header2 IS NOT INITIAL.
+
+        IF gv_reqlist IS NOT INITIAL.
+          SELECT * FROM zirs_item_mast
+            INTO CORRESPONDING FIELDS OF TABLE lt_item
+            WHERE item_doc_id IN  gv_tlist.
+        ELSE.
+          SELECT * FROM zirs_item_mast
+            INTO CORRESPONDING FIELDS OF TABLE lt_item
+            WHERE item_doc_id = gv_docid.
+        ENDIF.
+
+        IF lt_item[] IS NOT INITIAL.
+
+          SELECT knttp knttx
+            FROM t163i
+            INTO CORRESPONDING FIELDS OF TABLE lt_t163i
+            FOR ALL ENTRIES IN lt_item
+            WHERE knttp = lt_item-knttp
+            AND spras = sy-langu.
+
+        ENDIF.
+
+        MOVE-CORRESPONDING ls_header2 TO ls_deep.
+        ls_deep-itreqlist = gv_reqlist.
+        ls_deep-item_doc_id = ls_header2-item_doc_id.
+        ls_deep-intiator = ls_header2-created_by.
+        ls_deep-location = ls_header2-location.
+        ls_deep-req_desc = ls_header2-subject.
+        ls_deep-category_doc_id = ls_header2-category_doc_id.
+        ls_deep-cost_doc_id = ls_header2-cost_doc_id.
+        ls_deep-project_id = ls_header2-project_id.
+        ls_deep-budgt_doc_id = ls_header2-budgt_doc_id.
+        ls_deep-sub_bud_doc_id = ls_header2-sub_bud_doc_id.
+        ls_deep-fy_id = ls_header2-fy_id.
+        ls_deep-subject = ls_header2-subject.
+        ls_deep-zprojlead = ls_header2-zprojlead.
+        ls_deep-zgrouplead = ls_header2-zgrouplead.
+        ls_deep-status = ls_header2-status.
+
+        SELECT SINGLE category_description
+          FROM zirs_catgry_mast
+          INTO ls_deep-category_description
+          WHERE category_doc_id = ls_deep-category_doc_id.
+
+        SELECT SINGLE cost_detail
+          FROM zirs_cost
+           INTO ls_deep-cost_detail
+           WHERE cost_doc_id = ls_deep-cost_doc_id.
+
+        SELECT SINGLE project_desc
+          FROM zirs_projct_mast
+           INTO ls_deep-project_desc
+           WHERE project_id = ls_deep-project_id.
+
+        SELECT SINGLE ref_description
+          FROM zirs_ref_mast
+           INTO ls_deep-ref_description
+           WHERE budgt_doc_id = ls_deep-budgt_doc_id.
+
+        SELECT SINGLE sub_bud_desc
+          FROM zirs_subbudget
+           INTO ls_deep-sub_bud_desc
+           WHERE sub_bud_doc_id = ls_deep-sub_bud_doc_id.
+
+        SELECT SINGLE fy_desc
+          FROM zirs_fy
+           INTO ls_deep-fy_desc
+           WHERE fy_id = ls_deep-fy_id.
+
+        SELECT SINGLE name_text
+          FROM v_usr_name
+          INTO ls_deep-zprojlead_name
+          WHERE bname = ls_deep-zprojlead.
+
+        SELECT SINGLE name_text
+          FROM v_usr_name
+           INTO ls_deep-zgrouplead_name
+           WHERE bname = ls_deep-zgrouplead.
+
+                  SELECT SINGLE name_text
+          FROM v_usr_name
+           INTO ls_deep-INTIATOR_name
+           WHERE bname = ls_deep-INTIATOR.
+
+        SELECT SINGLE description
+          FROM zirs_status_mast
+          INTO ls_deep-status_text
+          WHERE status = ls_deep-status.
+
+
+*          ls_deep-REMARK = ls_header2-
+*          ls_deep-INTIATOR = ls_header2-
+*          ls_deep-ZLOCATION = ls_header2-
+*          ls_deep-ZCURRENCY = ls_header2-
+*          ls_deep-INITIAL_PRICE = ls_header2-
+*          ls_deep-FINAL_PRICE = ls_header2-
+*          ls_deep-LASTYEAR_PRICE = ls_header2-
+*          ls_deep-LIFNR = ls_header2-
+*          ls_deep-YEAR_EXTEND = ls_header2-
+*          ls_deep-CFY = ls_header2-
+*          ls_deep-CFY_AMOUNT = ls_header2-
+*          ls_deep-CFY1 = ls_header2-
+*          ls_deep-CFY1_AMOUNT = ls_header2-
+*          ls_deep-CFY2 = ls_header2-
+*          ls_deep-CFY2_AMOUNT = ls_header2-
+*          ls_deep-CFY3 = ls_header2-
+*          ls_deep-CFY3_AMOUNT = ls_header2-
+        ls_deep-msg = 'Data read Successfully'.
+        ls_deep-msgtype = 'S'.
+
+        LOOP AT lt_item INTO ls_item.
+          MOVE-CORRESPONDING ls_item TO ls_item2.
+          ls_item2-itreq_no = ls_item2-item_doc_id.
+          ls_item2-itelocation = ls_item-location.
+
+          READ TABLE lt_t163i INTO ls_t163i WITH KEY knttp = ls_item-knttp.
+          IF sy-subrc = 0.
+            ls_item2-knttx = ls_t163i-knttx.
+          ENDIF.
+
+          APPEND ls_item2 TO lt_item2.
+          CLEAR : ls_item2.
+        ENDLOOP.
+
+        APPEND LINES OF lt_item2 TO ls_deep-itemset01.
+
+      ELSE.
+        ls_deep-msg = 'No data found'.
+        ls_deep-msgtype = 'E'.
+      ENDIF.
+
+      APPEND ls_deep TO lt_deep.
+
+      copy_data_to_ref(
+        EXPORTING
+          is_data = lt_deep
+        CHANGING
+          cr_data = er_entityset ).
+
+      INSERT lc_expand_tech_clause INTO TABLE et_expanded_tech_clauses.
+
+
+
+    WHEN OTHERS.
+
+
+
+  ENDCASE.
+
+
+endmethod.
