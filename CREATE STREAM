@@ -1,0 +1,62 @@
+method /IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_STREAM.
+
+DATA:    ls_key_tab                   TYPE /iwbep/s_mgw_name_value_pair,
+           lt_key_tab                   TYPE /iwbep/t_mgw_name_value_pair,
+           lt_key                       TYPE /iwbep/t_mgw_tech_pairs.
+
+  DATA : ls_attachment TYPE zite_attdummy.
+
+  DATA :  lv_filetype TYPE zfiletype,
+          lo_message_container TYPE REF TO /iwbep/if_message_container,
+          filename TYPE string,
+          fname(220) type c.
+
+ data : lv_pernr TYPE uname.
+  CASE iv_entity_name.
+    WHEN 'Attachment'.
+
+   lv_pernr = sy-uname.
+
+      IF is_media_resource IS NOT INITIAL AND iv_slug IS NOT INITIAL.
+
+        SPLIT iv_slug AT '#' INTO filename  lv_filetype.
+        CONDENSE :filename,lv_filetype.
+
+        SELECT MAX( sno )
+          FROM zite_attdummy
+          INTO ls_attachment-sno
+          WHERE dummy_attachment  = 'ITE1'
+          AND filetype = lv_filetype.
+
+        ls_attachment-dummy_attachment = 'ITE1'.
+        ls_attachment-sno = ls_attachment-sno + 1.
+        ls_attachment-file_name = filename.
+        ls_attachment-filetype = lv_filetype.
+        ls_attachment-mimetype = is_media_resource-mime_type.
+        ls_attachment-file_content = is_media_resource-value.
+        ls_attachment-pernr = lv_pernr.
+        lo_message_container = me->mo_context->get_message_container( ).
+        MODIFY zite_attdummy FROM ls_attachment.
+        IF sy-subrc = 0.
+          COMMIT WORK.
+        else.
+          fname = filename.
+          CALL METHOD lo_message_container->add_message_text_only
+          EXPORTING
+            iv_msg_type = 'E'
+            iv_msg_text = fname.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            message_container = lo_message_container.
+
+        ENDIF.
+
+
+      ENDIF.
+
+    WHEN OTHERS.
+
+  ENDCASE.
+
+
+endmethod.
