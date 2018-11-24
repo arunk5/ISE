@@ -1,0 +1,53 @@
+method SLOCATIONSET_GET_ENTITYSET.
+**TRY.
+*SUPER->SLOCATIONSET_GET_ENTITYSET(
+*  EXPORTING
+*    IV_ENTITY_NAME           = IV_ENTITY_NAME
+*    IV_ENTITY_SET_NAME       = IV_ENTITY_SET_NAME
+*    IV_SOURCE_NAME           = IV_SOURCE_NAME
+*    IT_FILTER_SELECT_OPTIONS = IT_FILTER_SELECT_OPTIONS
+*    IS_PAGING                = IS_PAGING
+*    IT_KEY_TAB               = IT_KEY_TAB
+*    IT_NAVIGATION_PATH       = IT_NAVIGATION_PATH
+*    IT_ORDER                 = IT_ORDER
+*    IV_FILTER_STRING         = IV_FILTER_STRING
+*    IV_SEARCH_STRING         = IV_SEARCH_STRING
+**    io_tech_request_context  = io_tech_request_context
+**  IMPORTING
+**    et_entityset             = et_entityset
+**    es_response_context      = es_response_context
+*       ).
+** CATCH /iwbep/cx_mgw_busi_exception .
+** CATCH /iwbep/cx_mgw_tech_exception .
+**ENDTRY.
+
+*  DATA:  lo_filter TYPE  REF TO /iwbep/if_mgw_req_filter,
+*         lt_filter_select_options TYPE /iwbep/t_mgw_select_option,
+*         lv_filter_str TYPE string,
+*         ls_filter TYPE /iwbep/s_mgw_select_option,
+*         lv_check TYPE char4,
+*         lv_location type char4.
+*
+*    DATA : lt_select TYPE /iwbep/t_cod_select_options,
+*           ls_select TYPE /iwbep/s_cod_select_option .
+*
+*
+*
+*  lo_filter = io_tech_request_context->get_filter( ).
+*  lt_filter_select_options = lo_filter->get_filter_select_options( ).
+*  lv_filter_str = lo_filter->get_filter_string( ).
+*
+*  READ TABLE it_filter_select_options INTO ls_filter WITH KEY property = 'Skey'.
+*  IF sy-subrc = 0.
+*    lt_select[] = ls_filter-select_options[].
+*    READ TABLE lt_select INTO ls_select INDEX 1.
+*    IF sy-subrc = 0.
+*      lv_check = ls_select-low.
+*    ENDIF.
+*  ENDIF.
+
+*select single WERKS from ZITE_PLANT into lv_location where NAME1 = lv_check.
+
+ select lgort lgobe from t001l into table et_entityset where WERKS = 'HHHO'.
+
+endmethod.
