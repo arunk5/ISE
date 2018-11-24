@@ -1,0 +1,105 @@
+METHOD zite_subjectset_get_entityset.
+
+  DATA : ls_entityset TYPE zcl_zit_expense_mpc=>ts_zite_subject.
+
+  DATA : ls_filter TYPE /iwbep/s_mgw_select_option,
+         lt_select TYPE /iwbep/t_cod_select_options,
+         ls_select TYPE /iwbep/s_cod_select_option.
+
+  DATA : header TYPE thead,
+         tlines TYPE TABLE OF tline,
+         slines TYPE tline.
+
+  DATA :  gv_itemdocid TYPE zidi,
+           gv_reqno TYPE zirs_id.
+
+  DATA :  gv_tsubject TYPE zsubject,
+          gv_tlen TYPE i.
+
+  DATA : gv_name TYPE thead-tdname.
+
+  CLEAR : gv_itemdocid,gv_reqno,gv_name,gv_tsubject,gv_tlen.
+
+  READ TABLE it_filter_select_options INTO ls_filter WITH KEY property = 'ItemDocId'.
+  IF sy-subrc = 0.
+    lt_select  = ls_filter-select_options[].
+    READ TABLE lt_select INTO ls_select INDEX 1 .
+    IF sy-subrc = 0.
+      gv_itemdocid  = ls_select-low.
+    ENDIF.
+  ENDIF.
+
+
+  READ TABLE it_filter_select_options INTO ls_filter WITH KEY property = 'ItreqNo'.
+  IF sy-subrc = 0.
+    lt_select = ls_filter-select_options[].
+    READ TABLE lt_select INTO ls_select INDEX 1.
+    IF sy-subrc = 0.
+      gv_reqno = ls_select-low.
+    ENDIF.
+  ENDIF.
+
+  CLEAR : gv_name.
+
+  CONCATENATE gv_itemdocid '_' gv_reqno INTO gv_name.
+
+  CALL FUNCTION 'READ_TEXT'
+    EXPORTING
+      client                  = sy-mandt
+      id                      = '005'
+      language                = sy-langu
+      name                    = gv_name
+      object                  = 'ZIT_EXP'
+*     ARCHIVE_HANDLE          = 0
+*     LOCAL_CAT               = ' '
+    IMPORTING
+      header                  = header
+*     OLD_LINE_COUNTER        =
+    TABLES
+      lines                   = tlines
+    EXCEPTIONS
+      id                      = 1
+      language                = 2
+      name                    = 3
+      not_found               = 4
+      object                  = 5
+      reference_check         = 6
+      wrong_access_to_archive = 7
+      OTHERS                  = 8.
+
+  IF tlines[] IS NOT INITIAL.
+    LOOP AT tlines INTO slines.
+      ls_entityset-tline = slines-tdline.
+      APPEND ls_entityset TO et_entityset.
+      CLEAR : ls_entityset.
+    ENDLOOP.
+
+  ELSE.
+
+    SELECT SINGLE subject
+      INTO gv_tsubject
+      FROM zite_header
+      WHERE item_doc_id = gv_itemdocid
+      AND itreq_no = gv_reqno.
+    IF sy-subrc = 0.
+      gv_tlen = strlen( gv_tsubject ).
+      IF gv_tlen > 132.
+        ls_entityset-tline = gv_tsubject+0(132).
+        APPEND ls_entityset TO et_entityset.
+        CLEAR : ls_entityset.
+        ls_entityset-tline = gv_tsubject+132(18).
+        APPEND ls_entityset TO et_entityset.
+        CLEAR : ls_entityset.
+      ELSE.
+        ls_entityset-tline = gv_tsubject.
+        APPEND ls_entityset TO et_entityset.
+        CLEAR : ls_entityset.
+      ENDIF.
+
+    ENDIF.
+
+  ENDIF.
+
+
+
+ENDMETHOD.
