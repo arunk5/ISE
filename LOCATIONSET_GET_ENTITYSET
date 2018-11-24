@@ -1,0 +1,38 @@
+method LOCATIONSET_GET_ENTITYSET.
+
+DATA : BEGIN OF ls_plant,
+         werks TYPE werks_d,
+         name1 TYPE name1,
+    END OF ls_plant.
+
+  DATA : ls_entity LIKE LINE OF et_entityset.
+
+  DATA : lt_plant LIKE TABLE OF ls_plant.
+
+  DATA : lt_userplant LIKE TABLE OF ls_plant.
+  DATA : ls_userplant LIKE ls_plant.
+
+
+  SELECT * FROM zite_plant
+    INTO CORRESPONDING FIELDS OF TABLE lt_userplant.
+
+  SELECT werks name1
+    FROM t001w
+    INTO CORRESPONDING FIELDS OF TABLE lt_plant
+    WHERE spras = sy-langu.
+
+
+  CLEAR : ls_entity,et_entityset.
+
+  LOOP AT lt_userplant INTO ls_userplant.
+    ls_entity-itelocation = ls_userplant-name1.
+    READ TABLE lt_plant INTO ls_plant WITH KEY werks = ls_userplant-werks.
+    IF sy-subrc = 0.
+      ls_entity-name1 = ls_plant-name1.
+    ENDIF.
+
+    APPEND ls_entity TO et_entityset.
+  ENDLOOP.
+
+
+endmethod.
