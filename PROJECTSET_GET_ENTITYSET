@@ -1,0 +1,17 @@
+method PROJECTSET_GET_ENTITYSET.
+
+  DATA : ls_entity TYPE ZCL_ZIT_EXPENSE_MPC=>TS_PROJECT.
+
+  CLEAR :ls_entity.
+
+  SELECT project_id project_desc
+    FROM zirs_projct_mast
+     INTO TABLE et_entityset.
+
+  IF sy-subrc <> 0.
+    ls_entity-msg = 'No data found'.
+    ls_entity-msgtype = 'E'.
+    APPEND ls_entity TO et_entityset.
+  ENDIF.
+
+endmethod.
