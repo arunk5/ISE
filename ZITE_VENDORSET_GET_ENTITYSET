@@ -1,0 +1,37 @@
+METHOD zite_vendorset_get_entityset.
+  DATA :  ls_vendor TYPE zite_vendor,
+          lt_vendor TYPE TABLE OF zite_vendor.
+
+  CLEAR : ls_vendor,lt_vendor[].
+
+  SELECT lifnr name1
+    FROM lfa1
+    INTO CORRESPONDING FIELDS OF TABLE lt_vendor
+    WHERE lifnr LIKE '00002%'
+    AND loevm <> 'X'
+    AND sperr <> 'X'
+    AND sperm <> 'X'..
+
+  SELECT lifnr name1
+    FROM lfa1
+    APPENDING CORRESPONDING FIELDS OF TABLE lt_vendor
+    WHERE lifnr LIKE '00003%'
+    AND loevm <> 'X'
+    AND sperr <> 'X'
+    AND sperm <> 'X'..
+
+  SELECT lifnr name1
+   FROM lfa1
+   APPENDING CORRESPONDING FIELDS OF TABLE lt_vendor
+   WHERE lifnr LIKE '00004%'
+   AND loevm <> 'X'
+   AND sperr <> 'X'
+   AND sperm <> 'X'..
+
+  IF lt_vendor[] IS NOT INITIAL.
+
+    APPEND LINES OF lt_vendor TO et_entityset.
+
+  ENDIF.
+
+ENDMETHOD.
