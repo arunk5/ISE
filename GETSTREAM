@@ -1,0 +1,83 @@
+METHOD /iwbep/if_mgw_appl_srv_runtime~get_stream.
+
+  DATA : ls_key_tab TYPE LINE OF /iwbep/t_mgw_name_value_pair.
+
+  DATA :  ls_header  TYPE ihttpnvp,
+          ls_stream   TYPE ty_s_media_resource.
+
+  DATA : gv_sno TYPE i,
+        gv_sno1 TYPE string,
+         gv_docid TYPE zirs_id,
+         gv_filetype TYPE zfiletype.
+
+  DATA : ls_header1  TYPE ihttpnvp.
+
+  DATA : ls_attachment TYPE zite_attachment.
+
+  DATA : ls_attachment2 TYPE zite_attachment.
+  DATA : ls_attachment3 TYPE zirs_attchment.
+
+
+  DATA :ls_key_tab1 LIKE LINE OF it_key_tab,
+        ls_key_tab2 LIKE LINE OF it_key_tab.
+
+  CASE iv_entity_name.
+    WHEN 'DownloadAttachment'.
+
+      READ TABLE it_key_tab INTO ls_key_tab WITH KEY name = 'ItemDocId'.
+      IF sy-subrc = 0.
+        READ TABLE it_key_tab INTO ls_key_tab1 WITH KEY name = 'GvSno'.
+        IF sy-subrc = 0.
+          READ TABLE it_key_tab INTO ls_key_tab2 WITH KEY name = 'Filetype'.
+          IF sy-subrc = 0.
+
+            IF  ls_key_tab1-value IS NOT INITIAL.
+              gv_sno =  ls_key_tab1-value.
+            ENDIF.
+
+            IF  ls_key_tab2-value IS NOT INITIAL.
+              gv_filetype =  ls_key_tab2-value.
+            ENDIF.
+
+            SELECT SINGLE *
+              FROM zite_attachment
+              INTO ls_attachment2
+              WHERE item_doc_id = ls_key_tab-value
+                AND sno = gv_sno
+              AND filetype = gv_filetype.
+
+            IF sy-subrc <> 0.
+
+              SELECT SINGLE *
+                FROM zirs_attchment
+                INTO ls_attachment3
+                WHERE item_doc_id = ls_key_tab-value
+                AND sno = gv_sno
+                AND filetype = gv_filetype.
+
+              ls_attachment2-filename     = ls_attachment3-filename .
+              ls_attachment2-file_content = ls_attachment3-file_content.
+              ls_attachment2-mimetype     = ls_attachment3-mimetype.
+
+            ENDIF.
+
+            IF ls_attachment2 IS NOT INITIAL.
+              ls_stream-value = ls_attachment2-file_content.
+              ls_stream-mime_type = ls_attachment2-mimetype.
+
+              copy_data_to_ref( EXPORTING is_data = ls_stream
+                                CHANGING  cr_data = er_stream ).
+            ENDIF.
+
+            ls_header1-name = 'content-disposition'.
+            CONCATENATE 'outline; filename=' ls_attachment2-filename INTO ls_header1-value.
+            /iwbep/if_mgw_conv_srv_runtime~set_header( ls_header1 ).
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+    WHEN OTHERS.
+
+  ENDCASE.
+
+ENDMETHOD.
