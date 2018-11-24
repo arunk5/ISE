@@ -1,0 +1,2071 @@
+METHOD /iwbep/if_mgw_appl_srv_runtime~create_deep_entity.
+
+
+  " Begin of Changes <STRAVIS><13.07.2018 12:55:46>
+  TYPES: BEGIN OF ty_mara,
+         matnr TYPE mara-matnr,
+         END OF ty_mara.
+
+  TYPES: BEGIN OF ty_lfa1,
+          lifnr TYPE lfa1-lifnr,
+          name1 TYPE lfa1-name1,
+        END OF ty_lfa1.
+
+  TYPES: BEGIN OF ty_t001w,
+          werks TYPE t001w-werks,
+          name1 TYPE t001w-name1,
+        END OF ty_t001w.
+
+  TYPES: BEGIN OF ty_t163i,
+          knttp TYPE t163i-knttp,
+          knttx TYPE t163i-knttx,
+        END OF ty_t163i.
+
+
+
+  DATA: lt_mara TYPE TABLE OF ty_mara,
+        ref_ls_mara TYPE REF TO ty_mara,
+        lt_lfa1 TYPE TABLE OF ty_lfa1,
+        ref_ls_lfa1 TYPE REF TO ty_lfa1,
+        lt_t001w TYPE TABLE OF ty_t001w,
+        lt_t001w1 TYPE TABLE OF ty_t001w,
+        ref_ls_t001w TYPE REF TO ty_t001w,
+        lt_t163i TYPE TABLE OF ty_t163i,
+        ref_ls_t163i TYPE REF TO ty_t163i,
+        lt_zite_gl TYPE TABLE OF zite_gl,
+        ref_ls_zite_gl TYPE REF TO zite_gl,
+          lt_zite_plant TYPE TABLE OF zite_plant,
+        ref_ls_zite_plant TYPE REF TO zite_plant,
+        ls_zite_plant TYPE zite_plant.
+  DATA: it_item_temp  TYPE TABLE OF zite_item_structure,
+        wa_item_temp  TYPE  zite_item_structure,
+        it_zite_slocation TYPE TABLE OF zite_slocation,
+        reff_wa_zite_slocation TYPE REF TO zite_slocation.
+  DATA: lv_row TYPE char2.
+  " End of Changes <STRAVIS><13.07.2018 12:55:46>
+
+  DATA : BEGIN OF ls_deep.
+          INCLUDE TYPE zcl_zit_expense_mpc=>ts_header.
+  DATA : itemset01 TYPE zcl_zit_expense_mpc=>tt_item.
+  DATA : htextset TYPE zcl_zit_expense_mpc=>tt_htext.
+  DATA : hnoteset TYPE zcl_zit_expense_mpc=>tt_hnote.
+  DATA : poshtextset TYPE zcl_zit_expense_mpc=>tt_poshtext.
+  DATA : poshnoteset TYPE zcl_zit_expense_mpc=>tt_poshnote.
+  DATA : zite_subjectset TYPE zcl_zit_expense_mpc=>tt_zite_subject.
+  DATA : END OF ls_deep.
+
+
+  DATA : BEGIN OF ls_deep1.
+          INCLUDE TYPE zcl_zit_expense_mpc=>ts_validation.
+  DATA : itemset TYPE TABLE OF zcl_zit_expense_mpc=>ts_item.
+  DATA : END OF ls_deep1.
+
+
+  DATA : lt_deep LIKE TABLE OF ls_deep.
+  DATA : ls_htext TYPE zcl_zit_expense_mpc=>ts_htext,
+         ls_hnote TYPE zcl_zit_expense_mpc=>ts_hnote.
+
+  DATA : ls_poshtext TYPE zcl_zit_expense_mpc=>ts_poshtext,
+         ls_poshnote TYPE zcl_zit_expense_mpc=>ts_poshnote.
+
+  DATA : ls_ise_subject TYPE zcl_zit_expense_mpc=>ts_zite_subject.
+
+  DATA : ls_header TYPE zcl_zit_expense_mpc=>tt_header ,
+         ls_item TYPE zcl_zit_expense_mpc=>ts_item,
+         lt_header TYPE TABLE OF zcl_zit_expense_mpc=>ts_header,
+         lt_item TYPE TABLE OF zcl_zit_expense_mpc=>ts_item.
+
+  DATA : ls_headert TYPE zite_header,
+         lt_headert TYPE TABLE OF zite_header,
+         ls_itemt TYPE zite_item_master,
+         lt_itemt TYPE TABLE OF zite_item_master,
+         lt_itemtd TYPE TABLE OF zite_item_master.
+
+  DATA : gv_claimno TYPE zidi.
+  DATA : lv_year(4)  TYPE n.
+
+  DATA : lv_success,lv_error.
+
+  DATA : lv_filetype TYPE zfiletype,
+         lv_filetypec TYPE zfiletype,
+         lv_filetype1 TYPE zfiletype,
+         lv_itreqno TYPE zirs_id.
+
+  DATA : lv_item TYPE zidi,
+        lv_sno TYPE i.
+
+  DATA : lv_anln1 TYPE anln1.
+
+  DATA : lv_subrc TYPE sy-subrc,
+         lv_exc_msg TYPE /iwbep/mgw_bop_rfc_excep_text..
+
+  DATA : msgtype TYPE bapi_mtype,
+         msg TYPE bapi_msg.
+
+  DATA : lx_root TYPE REF TO cx_root.
+
+  DATA: lv_entityset_name TYPE /iwbep/mgw_tech_name.
+
+  DATA : lt_attachment TYPE TABLE OF zite_attachment,
+         ls_attachment TYPE zite_attachment,
+         ls_attachment1 TYPE zite_attachment.
+
+  DATA : lt_irsattachment TYPE TABLE OF zirs_attchment,
+         ls_irsattachment TYPE zirs_attchment.
+
+  DATA : lt_attdummy TYPE TABLE OF zite_attdummy,
+         ls_attdummy TYPE zite_attdummy.
+
+  DATA : BEGIN OF ls_attdummy2,
+         item_doc_id TYPE zidi,
+         itreqno  TYPE zirs_id,
+         sno TYPE i,
+         filetype TYPE zfiletype,
+         file_name(255),
+         file_content TYPE string,
+         mimetype TYPE zmime_type,
+    END OF ls_attdummy2.
+
+  DATA : lt_attdummy2 LIKE TABLE OF ls_attdummy2.
+
+  DATA : lv_update.
+
+  DATA : lx_rrot TYPE REF TO cx_root.
+
+  DATA : header TYPE thead,
+         tlines TYPE TABLE OF tline,
+         slines TYPE tline.
+
+  DATA : gv_docid TYPE zirs_id,
+         gv_reqlist TYPE string,
+         gv_reqlist1 TYPE zirs_id,
+         gv_reqlist2 TYPE zirs_id,
+         gv_reqlist3 TYPE zirs_id,
+         gv_reqlist4 TYPE zirs_id,
+         gv_reqlist5 TYPE zirs_id,
+         gv_reqlist6 TYPE zirs_id,
+         gv_reqlist7 TYPE zirs_id,
+         gv_reqlist8 TYPE zirs_id,
+         gv_reqlist9 TYPE zirs_id,
+         gv_reqlist10 TYPE zirs_id.
+
+  DATA: BEGIN OF gv_list,
+        sign   TYPE c LENGTH 1,
+        option TYPE c LENGTH 2,
+        low    TYPE zirs_id,
+        high   TYPE zirs_id,
+      END OF gv_list.
+
+  DATA : len TYPE i,
+        rowcount TYPE p DECIMALS 2,
+        startindex TYPE i,
+        endindex TYPE i,
+        str TYPE string.
+
+  DATA : lv_status TYPE zirs_status.
+
+  DATA : gv_error.
+
+  DATA :  gv_tlist LIKE TABLE OF gv_list.
+
+  CLEAR : ls_deep,ls_deep-itemset01[],ls_htext,ls_hnote.
+
+*  Flag Meaning used in Coding
+*  1.C -> Create New IS Expense
+*  2.D -> Draft A IS Expense
+*  3.A -> Approve
+*  4.R -> Reject
+*  5.S -> Resubmit
+
+
+  TRY.
+
+      lv_entityset_name = io_tech_request_context->get_entity_set_name( ).
+
+    CATCH cx_root INTO lx_root.
+      lv_subrc = 1001.
+      lv_exc_msg = lx_root->if_message~get_text( ).
+  ENDTRY.
+
+
+
+  CASE lv_entityset_name.
+
+    WHEN 'HeaderSet'.
+
+      TRY.
+
+          io_data_provider->read_entry_data( IMPORTING es_data = ls_deep ).
+
+        CATCH cx_root INTO lx_root.
+
+          lv_subrc = 1001.
+          lv_exc_msg = lx_root->if_message~get_text( ).
+
+      ENDTRY.
+
+
+
+
+
+
+
+      IF ls_deep-flag = 'C' OR ls_deep-flag = 'D'.
+
+        CLEAR : gv_claimno,lv_update.
+
+        IF ls_deep-item_doc_id IS INITIAL.
+
+          CLEAR : lv_year.
+
+          lv_year = sy-datum+0(4).
+
+          CALL FUNCTION 'NUMBER_GET_NEXT'
+            EXPORTING
+              nr_range_nr             = '01'
+              object                  = 'ZITE_NR' "ZITE_CLIAM
+              toyear                  = lv_year
+            IMPORTING
+              number                  = gv_claimno
+            EXCEPTIONS
+              interval_not_found      = 1
+              number_range_not_intern = 2
+              object_not_found        = 3
+              quantity_is_0           = 4
+              quantity_is_not_1       = 5
+              interval_overflow       = 6
+              buffer_overflow         = 7
+              OTHERS                  = 8.
+
+          CONCATENATE 'ISE' sy-datum+2(2) gv_claimno INTO ls_headert-item_doc_id.
+          CONDENSE ls_headert-item_doc_id.
+        ELSE.
+          lv_update = 'X'.
+          ls_headert-item_doc_id = ls_deep-item_doc_id.
+        ENDIF.
+
+        ls_deep-item_doc_id = ls_headert-item_doc_id.
+
+        ls_headert-category_doc_id  = ls_deep-category_doc_id.
+        ls_headert-itreq_no  = ls_deep-itreq_no.
+        ls_headert-location  = ls_deep-location.
+        ls_headert-cost_doc_id      = ls_deep-cost_doc_id.
+        ls_headert-req_desc         = ls_deep-req_desc.
+        ls_headert-project_id       = ls_deep-project_id.
+        ls_headert-budgt_doc_id     = ls_deep-budgt_doc_id.
+        ls_headert-sub_bud_doc_id   = ls_deep-sub_bud_doc_id.
+        ls_headert-fy_id            = ls_deep-fy_id.
+*        ls_headert-subject          = ls_deep-subject.  "Replaced by Text Editor
+        ls_headert-zprojlead        = ls_deep-zprojlead.
+        ls_headert-zgrouplead       = ls_deep-zgrouplead.
+        ls_headert-intiator = ls_deep-intiator.
+        ls_headert-zcurrency = ls_deep-zcurrency.
+        ls_headert-initial_price = ls_deep-initial_price.
+        ls_headert-final_price = ls_deep-final_price.
+        ls_headert-lastyear_price = ls_deep-lastyear_price.
+*        ls_headert-htext = ls_deep-htext.
+*        ls_headert-hnote = ls_deep-hnote.
+        ls_headert-source = ls_deep-source.
+        ls_headert-sremarks = ls_deep-sremarks.
+*        ls_headert-lifnr = ls_deep-zgrouplead.
+        ls_headert-year_extend = ls_deep-year_extend.
+        ls_headert-cfy = ls_deep-cfy.
+        ls_headert-cfy_amount = ls_deep-cfy_amount.
+        ls_headert-cfy1 = ls_deep-cfy1.
+        ls_headert-cfy1_amount = ls_deep-cfy1_amount.
+        ls_headert-cfy2 = ls_deep-cfy2.
+        ls_headert-cfy2_amount = ls_deep-cfy2_amount.
+        ls_headert-cfy3 = ls_deep-cfy3.
+        ls_headert-cfy3_amount = ls_deep-cfy3_amount.
+
+        IF ls_deep-flag = 'C'.
+          ls_headert-status           = '01'.
+        ELSEIF ls_deep-flag = 'D'.
+          ls_headert-status           = '00'.
+        ENDIF.
+        ls_headert-created_by       = sy-uname.
+        ls_headert-created_on       = sy-datum.
+        ls_headert-created_at       = sy-uzeit.
+        ls_headert-changed_by       = sy-uname.
+        ls_headert-changed_on       = sy-datum.
+        ls_headert-changed_at       = sy-uzeit.
+
+
+        IF ls_deep-itreqlist IS NOT INITIAL.
+          SPLIT ls_deep-itreqlist AT ',' INTO gv_reqlist1 gv_reqlist2 gv_reqlist3 gv_reqlist4 gv_reqlist5
+                                     gv_reqlist6 gv_reqlist7 gv_reqlist8 gv_reqlist9 gv_reqlist10.
+
+          IF gv_reqlist1 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist1.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist1.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist2 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist2.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist2.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist3 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist3.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist3.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist4 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist4.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist4.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist5 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist5.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist5.
+            APPEND gv_list TO gv_tlist.
+          ENDIF.
+
+          IF gv_reqlist6 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist6.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist6.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist7 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist7.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist7.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist8 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist8.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist8.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist9 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist9.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist9.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+          IF gv_reqlist10 IS NOT INITIAL.
+            ls_headert-itreq_no  = gv_reqlist10.
+            SELECT SINGLE zprojlead zgrouplead
+              FROM zirs_header
+              INTO (ls_headert-zprojlead,ls_headert-zgrouplead)
+              WHERE item_doc_id = ls_headert-itreq_no.
+            APPEND ls_headert TO lt_headert.
+
+            CLEAR : gv_list.
+            gv_list-sign = 'I'.
+            gv_list-option = 'EQ'.
+            gv_list-low = gv_reqlist10.
+            APPEND gv_list TO gv_tlist.
+
+          ENDIF.
+
+        ELSE.
+          APPEND ls_headert TO lt_headert.
+        ENDIF.
+        CLEAR : lv_item.
+
+        SORT ls_deep-itemset01 BY item_doc_id itreq_no.
+
+        LOOP AT ls_deep-itemset01 INTO ls_item.
+
+          CLEAR : lv_anln1.
+
+          IF ls_item-knttp = 'A' AND ls_item-anln1 IS INITIAL.
+            ls_deep-msgtype = 'E'.
+            ls_deep-msg = 'Asset Number is required'.
+            gv_error = 'X'.
+*Send response to back to UI5/Fiori system
+            copy_data_to_ref(
+            EXPORTING
+              is_data = ls_deep
+            CHANGING
+              cr_data = er_deep_entity ).
+            EXIT.
+          ENDIF.
+*Check Asset no is valid or not.
+          IF ls_item-anln1 IS NOT INITIAL.
+            SELECT SINGLE anln1 FROM anlh INTO lv_anln1 WHERE bukrs = 'HHML' AND anln1 = ls_item-anln1.
+            IF sy-subrc <> 0.
+              ls_deep-msgtype = 'E'.
+              ls_deep-msg = 'Invalid Asset Number'.
+              gv_error = 'X'.
+*Send response to back to UI5/Fiori system
+              copy_data_to_ref(
+              EXPORTING
+                is_data = ls_deep
+              CHANGING
+                cr_data = er_deep_entity ).
+              EXIT.
+            ENDIF.
+          ENDIF.
+
+          IF lv_itreqno <> ls_item-itreq_no.
+            CLEAR : lv_item.
+            lv_itreqno  = ls_item-itreq_no.
+          ENDIF.
+
+          lv_item = lv_item + 10.
+
+          ls_itemt-item_doc_id   = ls_headert-item_doc_id.
+          ls_itemt-item_no       = lv_item.
+          ls_itemt-epstp     = ls_item-epstp.
+          ls_itemt-item_desc     = ls_item-item_desc.
+          ls_itemt-service_stext     = ls_item-service_stext.
+          ls_itemt-material_no   = ls_item-material_no.
+          ls_itemt-service_no    = ls_item-service_no.
+          ls_itemt-expected_date = ls_item-expected_date.
+          ls_itemt-quantity      = ls_item-quantity.
+          ls_itemt-lifnr         = ls_item-lifnr.
+          ls_itemt-ite_location  = ls_item-itelocation.
+          ls_itemt-knttp         = ls_item-knttp.
+          ls_itemt-netpr         = ls_item-netpr.
+          ls_itemt-anln1         = ls_item-anln1.
+          ls_itemt-itreq_no      = ls_item-itreq_no.
+          ls_itemt-hkont         = ls_item-hkont.
+          ls_itemt-deletion_flag = ls_item-deletion_flag.
+          ls_itemt-slocation = ls_item-stge_loc.
+
+          IF ls_deep-flag = 'C'.
+            ls_itemt-status            = '01'.
+          ELSEIF ls_deep-flag = 'D'.
+            ls_itemt-status            = '00'.
+          ENDIF.
+
+          IF lv_update <> 'X'.
+            ls_itemt-created_by    = sy-uname.
+            ls_itemt-created_on    = sy-datum.
+            ls_itemt-created_at    = sy-uzeit.
+          ENDIF.
+
+          ls_itemt-changed_by    = sy-uname.
+          ls_itemt-changed_on    = sy-datum.
+          ls_itemt-changed_at    = sy-uzeit.
+
+          APPEND ls_itemt TO lt_itemt.
+          CLEAR : ls_itemt,ls_item.
+
+        ENDLOOP.
+
+        CLEAR : lt_attdummy[].
+
+        SELECT * FROM zite_attdummy
+          INTO CORRESPONDING FIELDS OF TABLE lt_attdummy WHERE pernr = sy-uname . .
+
+        IF lv_update <> 'X'.
+
+          IF  ls_deep-itreqlist IS NOT INITIAL.
+            SELECT * FROM zirs_attchment
+              INTO CORRESPONDING FIELDS OF TABLE lt_irsattachment
+              WHERE item_doc_id IN gv_tlist .
+
+          ELSE.
+
+            SELECT * FROM zirs_attchment
+              INTO CORRESPONDING FIELDS OF TABLE lt_irsattachment
+              WHERE item_doc_id = ls_deep-itreq_no .
+
+          ENDIF.
+
+          CLEAR :  lv_sno,lv_filetypec.
+
+          SORT lt_irsattachment BY item_doc_id filetype.
+
+          LOOP AT lt_irsattachment INTO ls_irsattachment.
+
+            IF lv_itreqno <> ls_irsattachment-item_doc_id.
+              CLEAR :lv_sno.
+              lv_itreqno =  ls_irsattachment-item_doc_id.
+            ENDIF.
+
+            IF lv_filetypec <> ls_irsattachment-filetype..
+              CLEAR :lv_sno.
+              lv_filetypec =  ls_irsattachment-filetype..
+            ENDIF.
+
+            lv_sno = lv_sno + 1.
+            ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+            ls_attachment-itreq_no       = ls_irsattachment-item_doc_id.
+            ls_attachment-sno           = lv_sno. "ls_irsattachment-sno.
+            ls_attachment-filename      = ls_irsattachment-filename.
+            ls_attachment-filetype      = ls_irsattachment-filetype.
+            ls_attachment-mimetype      = ls_irsattachment-mimetype.
+            ls_attachment-file_content  = ls_irsattachment-file_content.
+            APPEND ls_attachment TO lt_attachment.
+            CLEAR : ls_attachment.
+          ENDLOOP.
+
+        ELSE.
+          SELECT * FROM zite_attachment
+            INTO CORRESPONDING FIELDS OF TABLE lt_attachment
+            WHERE item_doc_id = ls_deep-item_doc_id
+            AND itreq_no =  ls_deep-itreq_no .
+        ENDIF.
+
+        CLEAR : lv_filetype,lv_sno,lv_filetype1.
+
+        IF lt_attachment[] IS NOT INITIAL.
+
+          SORT lt_attachment BY item_doc_id sno filetype.
+
+          CLEAR : lv_sno.
+
+          READ TABLE lt_attachment INTO ls_attachment1 INDEX 1.
+
+          READ TABLE lt_attachment INTO ls_attachment WITH KEY filetype = 'IP'
+          itreq_no = ls_attachment1-itreq_no.
+          IF sy-subrc = 0.
+
+            LOOP AT lt_attachment INTO ls_attachment  WHERE filetype = 'IP'
+              AND itreq_no = ls_attachment1-itreq_no..
+              lv_sno = lv_sno + 1.
+            ENDLOOP.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'IP'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              ls_attachment-itreq_no      = ls_attachment1-itreq_no.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ELSE.
+            CLEAR : lv_sno.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'IP'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              IF gv_reqlist1 IS  NOT INITIAL.
+                ls_attachment-itreq_no      = gv_reqlist1.
+              ELSE.
+                ls_attachment-itreq_no      = ls_deep-itreq_no.
+              ENDIF.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ENDIF.
+
+          CLEAR : lv_sno.
+
+          READ TABLE lt_attachment INTO ls_attachment1 INDEX 1.
+          READ TABLE lt_attachment INTO ls_attachment WITH KEY filetype = 'FP'
+          itreq_no = ls_attachment1-itreq_no..
+          IF sy-subrc = 0.
+
+            LOOP AT lt_attachment INTO ls_attachment  WHERE filetype = 'FP'
+              AND itreq_no = ls_attachment1-itreq_no..
+              lv_sno = lv_sno + 1.
+            ENDLOOP.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'FP'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              ls_attachment-itreq_no      = ls_attachment1-itreq_no.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ELSE.
+            CLEAR : lv_sno.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'FP'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              IF gv_reqlist1 IS NOT INITIAL.
+                ls_attachment-itreq_no      = gv_reqlist1.
+              ELSE.
+                ls_attachment-itreq_no   =  ls_deep-itreq_no.
+              ENDIF.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ENDIF.
+
+          CLEAR : lv_sno.
+
+          READ TABLE lt_attachment INTO ls_attachment1 INDEX 1.
+
+          READ TABLE lt_attachment INTO ls_attachment WITH KEY filetype = 'BC'
+          itreq_no = ls_attachment1-itreq_no..
+          IF sy-subrc = 0.
+
+            LOOP AT lt_attachment INTO ls_attachment  WHERE filetype = 'BC'
+              AND itreq_no = ls_attachment1-itreq_no..
+              lv_sno = lv_sno + 1.
+            ENDLOOP.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'BC'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              ls_attachment-itreq_no      = ls_attachment1-itreq_no.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ELSE.
+            CLEAR : lv_sno.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'BC'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              IF gv_reqlist1 IS NOT INITIAL.
+                ls_attachment-itreq_no      = gv_reqlist1.
+              ELSE.
+                ls_attachment-itreq_no      =  ls_deep-itreq_no.
+              ENDIF.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ENDIF.
+
+          CLEAR : lv_sno.
+
+          READ TABLE lt_attachment INTO ls_attachment1 INDEX 1.
+          READ TABLE lt_attachment INTO ls_attachment WITH KEY filetype = 'OT'
+          itreq_no = ls_attachment1-itreq_no..
+          IF sy-subrc = 0.
+
+            LOOP AT lt_attachment INTO ls_attachment  WHERE filetype = 'OT'
+              AND itreq_no = ls_attachment1-itreq_no..
+              lv_sno = lv_sno + 1.
+            ENDLOOP.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'OT'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              ls_attachment-itreq_no      = ls_attachment1-itreq_no.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ELSE.
+            CLEAR : lv_sno.
+            LOOP AT lt_attdummy INTO ls_attdummy WHERE filetype = 'OT'.
+              lv_sno = lv_sno + 1.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              IF gv_reqlist1 IS NOT INITIAL.
+                ls_attachment-itreq_no      = gv_reqlist1.
+              ELSE.
+                ls_attachment-itreq_no      = ls_deep-itreq_no.
+              ENDIF.
+              ls_attachment-sno           = lv_sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+
+          ENDIF.
+
+
+        ELSE.
+
+          IF lt_attdummy IS NOT INITIAL.
+            LOOP AT lt_attdummy INTO ls_attdummy.
+              ls_attachment-item_doc_id   = ls_deep-item_doc_id.
+              IF gv_reqlist1 IS NOT INITIAL.
+                ls_attachment-itreq_no      = gv_reqlist1.
+              ELSE.
+                ls_attachment-itreq_no      = ls_deep-itreq_no.
+              ENDIF.
+              ls_attachment-sno           = ls_attdummy-sno.
+              ls_attachment-filename      = ls_attdummy-file_name.
+              ls_attachment-filetype      = ls_attdummy-filetype.
+              ls_attachment-mimetype      = ls_attdummy-mimetype.
+              ls_attachment-file_content  = ls_attdummy-file_content.
+              APPEND ls_attachment TO lt_attachment.
+              CLEAR : ls_attachment,ls_attdummy.
+            ENDLOOP.
+          ENDIF.
+
+        ENDIF.
+        CLEAR : ls_headert,ls_itemt,ls_item.
+
+        IF ls_deep-item_doc_id IS INITIAL.
+          ls_deep-msgtype = 'E'.
+          ls_deep-msg = 'Error while generating IT Expense Claim number'.
+          gv_error = 'X'.
+
+          copy_data_to_ref(
+          EXPORTING
+            is_data = ls_deep
+          CHANGING
+            cr_data = er_deep_entity ).
+
+          EXIT.
+
+*        ELSEIF ls_deep-itreq_no IS INITIAL.
+*          ls_deep-msgtype = 'E'.
+*          ls_deep-msg = 'No IT Requisition Number is received'.
+*
+*          copy_data_to_ref(
+*          EXPORTING
+*            is_data = ls_deep
+*          CHANGING
+*            cr_data = er_deep_entity ).
+*          EXIT.
+        ENDIF.
+
+        IF gv_error <> 'X'.
+          IF lt_headert IS NOT INITIAL." AND lt_itemt IS NOT INITIAL.
+
+            MODIFY zite_header FROM TABLE lt_headert.
+            IF sy-subrc = 0.
+              IF lt_itemt[] IS NOT  INITIAL.
+                IF lv_update  = 'X' AND ls_deep-item_doc_id IS NOT INITIAL
+                  AND ls_deep-itreq_no IS NOT INITIAL.
+                  DELETE FROM zite_item_master WHERE item_doc_id = ls_deep-item_doc_id
+                  AND itreq_no = ls_deep-itreq_no.
+                ENDIF.
+
+                MODIFY zite_item_master FROM TABLE lt_itemt.
+              ENDIF.
+              IF sy-subrc = 0.
+                MODIFY zite_attachment FROM TABLE lt_attachment.
+                IF sy-subrc = 0.
+                  ls_deep-msgtype = 'S'.
+                  IF lv_update = ''.
+                    CONCATENATE 'IT Expense number' ls_deep-item_doc_id
+                    'created successfully' INTO ls_deep-msg SEPARATED BY space.
+                    COMMIT WORK.
+                  ELSE.
+                    CONCATENATE 'IT Expense number' ls_deep-item_doc_id
+                    'updated successfully' INTO ls_deep-msg SEPARATED BY space.
+                    COMMIT WORK.
+                  ENDIF.
+
+                ELSE.
+                  ls_deep-msgtype = 'E'.
+                  ls_deep-msg = 'Error in uploading attachments'.
+                  ROLLBACK WORK.
+                ENDIF.
+              ELSE.
+                ls_deep-msgtype = 'E'.
+                IF lv_update = ''.
+                  ls_deep-msg = 'Error in creating document'.
+                ELSE.
+                  ls_deep-msg = 'Error in updating document'.
+                ENDIF.
+
+                ROLLBACK WORK.
+              ENDIF.
+            ELSE.
+              ls_deep-msgtype = 'E'.
+              IF lv_update = ''.
+                ls_deep-msg = 'Error in creating document'.
+              ELSE.
+                ls_deep-msg = 'Error in updating document'.
+              ENDIF.
+              ROLLBACK WORK.
+            ENDIF.
+
+*Save Header Text for New IT Expense Claim no
+            IF ls_deep-msgtype = 'S'.
+
+              CLEAR:slines,tlines[],header,len.
+
+              IF ls_deep-htextset[] IS NOT INITIAL.
+
+*                LOOP AT ls_deep-htextset INTO ls_htext.
+*
+*                  len = strlen( ls_htext-tline ).
+*                  CLEAR : rowcount,str,startindex,endindex.
+*                  IF len > 132.
+*                    rowcount = ceil( len / 132 ).
+*                  ENDIF.
+*
+*                  IF rowcount IS NOT INITIAL.
+*                    DO rowcount TIMES.
+*                      startindex = startindex * 132.
+*                      endindex = startindex + 132.
+*                      IF endindex > len.
+*                        endindex  = len - startindex.
+*                      ENDIF.
+*                      str = ls_htext-tline+startindex(endindex).
+*                      slines-tdformat = '*'.
+*                      slines-tdline =  str.
+*                      APPEND slines TO tlines.
+*                      CLEAR : slines.
+*                      startindex = startindex + 1.
+*                    ENDDO.
+*                  ELSE.
+*                    slines-tdformat = '*'.
+*                    slines-tdline = ls_htext-tline.
+*                    APPEND slines TO tlines.
+*                    CLEAR : slines.
+*                  ENDIF.
+*                ENDLOOP.
+
+
+                LOOP AT ls_deep-htextset INTO ls_htext.
+                  len = strlen( ls_htext-tline ).
+                  CLEAR : rowcount,str,startindex,endindex.
+                  IF len > 132.
+                    rowcount = ceil( len / 132 ).
+                  ENDIF.
+
+                  IF rowcount IS NOT INITIAL.
+                    DO rowcount TIMES.
+                      IF sy-index = '1'.
+                        startindex = startindex * 132.
+                        endindex = startindex + 132.
+
+                      ELSE.
+
+                        IF  startindex >= len.
+                          EXIT.
+                        ENDIF.
+                        endindex = len - startindex.
+                        IF endindex > 132.
+                          endindex = 132.
+                        ENDIF.
+
+                      ENDIF.
+                      IF endindex > len.
+                        endindex  = len - startindex.
+                      ENDIF.
+                      str = ls_htext-tline+startindex(endindex).
+                      slines-tdformat = '*'.
+                      slines-tdline =  str.
+                      APPEND slines TO tlines.
+                      CLEAR : slines.
+
+                      startindex = startindex + endindex.
+*                      startindex = startindex + 1.
+                    ENDDO.
+                  ELSE.
+                    slines-tdformat = '*'.
+                    slines-tdline = ls_htext-tline.
+                    APPEND slines TO tlines.
+                    CLEAR : slines.
+                  ENDIF.
+                ENDLOOP.
+
+
+
+
+
+*                slines-tdformat = '*'.
+*                slines-tdline = ls_htext-tline.
+*                APPEND slines TO tlines.
+*                CLEAR : slines.
+*              ENDLOOP.
+
+                IF gv_reqlist1 IS INITIAL.
+                  gv_reqlist1 = ls_deep-itreq_no.
+                ENDIF.
+
+                header-tdobject = 'ZIT_EXP'.
+                CONCATENATE ls_deep-item_doc_id
+                gv_reqlist1
+                INTO header-tdname SEPARATED BY '_'.
+                header-tdid = '001'.
+                header-tdspras = sy-langu.
+
+                CALL FUNCTION 'SAVE_TEXT'
+                  EXPORTING
+                    client   = sy-mandt
+                    header   = header
+                  TABLES
+                    lines    = tlines
+                  EXCEPTIONS
+                    id       = 1
+                    language = 2
+                    name     = 3
+                    object   = 4
+                    OTHERS   = 5.
+
+                IF sy-subrc = 0.
+                  COMMIT WORK.
+                ENDIF.
+
+              ENDIF.
+
+*Save Header Note for New IT Expense Claim no
+              CLEAR:slines,tlines[],header.
+
+              IF ls_deep-hnoteset[] IS NOT INITIAL.
+
+                LOOP AT ls_deep-hnoteset INTO ls_hnote.
+                  len = strlen( ls_hnote-tline ).
+                  CLEAR : rowcount,str,startindex,endindex.
+                  IF len > 132.
+                    rowcount = ceil( len / 132 ).
+                  ENDIF.
+
+                  IF rowcount IS NOT INITIAL.
+                    DO rowcount TIMES.
+                      IF sy-index = '1'.
+                        startindex = startindex * 132.
+                        endindex = startindex + 132.
+
+                      ELSE.
+
+                        IF  startindex >= len.
+                          EXIT.
+                        ENDIF.
+                        endindex = len - startindex.
+                        IF endindex > 132.
+                          endindex = 132.
+                        ENDIF.
+
+                      ENDIF.
+                      IF endindex > len.
+                        endindex  = len - startindex.
+                      ENDIF.
+                      str = ls_hnote-tline+startindex(endindex).
+                      slines-tdformat = '*'.
+                      slines-tdline =  str.
+                      APPEND slines TO tlines.
+                      CLEAR : slines.
+
+                      startindex = startindex + endindex.
+*                      startindex = startindex + 1.
+                    ENDDO.
+                  ELSE.
+                    slines-tdformat = '*'.
+                    slines-tdline = ls_hnote-tline.
+                    APPEND slines TO tlines.
+                    CLEAR : slines.
+                  ENDIF.
+                ENDLOOP.
+
+                IF gv_reqlist1 IS INITIAL.
+                  gv_reqlist1 = ls_deep-itreq_no.
+                ENDIF.
+
+                header-tdobject = 'ZIT_EXP'.
+                CONCATENATE ls_deep-item_doc_id
+                gv_reqlist1
+                INTO header-tdname SEPARATED BY '_'.
+                header-tdid = '002'.
+                header-tdspras = sy-langu.
+
+                CALL FUNCTION 'SAVE_TEXT'
+                  EXPORTING
+                    client   = sy-mandt
+                    header   = header
+                  TABLES
+                    lines    = tlines
+                  EXCEPTIONS
+                    id       = 1
+                    language = 2
+                    name     = 3
+                    object   = 4
+                    OTHERS   = 5.
+
+                IF sy-subrc = 0.
+                  COMMIT WORK.
+                ENDIF.
+
+              ENDIF.
+
+*Save PO Service Header Text for New IT Expense Claim no
+              CLEAR:slines,tlines[],header.
+
+              IF ls_deep-poshtextset[] IS NOT INITIAL.
+
+*                LOOP AT ls_deep-poshtextset INTO ls_poshtext.
+*                  len = strlen( ls_poshtext-tline ).
+*                  CLEAR : rowcount,str,startindex,endindex.
+*                  IF len > 132.
+*                    rowcount = ceil( len / 132 ).
+*                  ENDIF.
+*
+*                  IF rowcount IS NOT INITIAL.
+*                    DO rowcount TIMES.
+*                      startindex = startindex * 132.
+*                      endindex = startindex + 132.
+*                      IF endindex > len.
+*                        endindex  = len - startindex.
+*                      ENDIF.
+*                      str = ls_poshtext-tline+startindex(endindex).
+*                      slines-tdformat = '*'.
+*                      slines-tdline =  str.
+*                      APPEND slines TO tlines.
+*                      CLEAR : slines.
+*                      startindex = startindex + 1.
+*                    ENDDO.
+*                  ELSE.
+*                    slines-tdformat = '*'.
+*                    slines-tdline = ls_poshtext-tline.
+*                    APPEND slines TO tlines.
+*                    CLEAR : slines.
+*                  ENDIF.
+*                ENDLOOP.
+*
+
+                LOOP AT ls_deep-poshtextset INTO ls_poshtext.
+                  len = strlen( ls_poshtext-tline ).
+                  CLEAR : rowcount,str,startindex,endindex.
+                  IF len > 132.
+                    rowcount = ceil( len / 132 ).
+                  ENDIF.
+
+                  IF rowcount IS NOT INITIAL.
+                    DO rowcount TIMES.
+                      IF sy-index = '1'.
+                        startindex = startindex * 132.
+                        endindex = startindex + 132.
+
+                      ELSE.
+
+                        IF  startindex >= len.
+                          EXIT.
+                        ENDIF.
+                        endindex = len - startindex.
+                        IF endindex > 132.
+                          endindex = 132.
+                        ENDIF.
+
+                      ENDIF.
+                      IF endindex > len.
+                        endindex  = len - startindex.
+                      ENDIF.
+                      str = ls_poshtext-tline+startindex(endindex).
+                      slines-tdformat = '*'.
+                      slines-tdline =  str.
+                      APPEND slines TO tlines.
+                      CLEAR : slines.
+
+                      startindex = startindex + endindex.
+*                      startindex = startindex + 1.
+                    ENDDO.
+                  ELSE.
+                    slines-tdformat = '*'.
+                    slines-tdline = ls_poshtext-tline.
+                    APPEND slines TO tlines.
+                    CLEAR : slines.
+                  ENDIF.
+                ENDLOOP.
+
+
+
+                IF gv_reqlist1 IS INITIAL.
+                  gv_reqlist1 = ls_deep-itreq_no.
+                ENDIF.
+
+                header-tdobject = 'ZIT_EXP'.
+                CONCATENATE ls_deep-item_doc_id
+                gv_reqlist1
+                INTO header-tdname SEPARATED BY '_'.
+                header-tdid = '003'.
+                header-tdspras = sy-langu.
+
+                CALL FUNCTION 'SAVE_TEXT'
+                  EXPORTING
+                    client   = sy-mandt
+                    header   = header
+                  TABLES
+                    lines    = tlines
+                  EXCEPTIONS
+                    id       = 1
+                    language = 2
+                    name     = 3
+                    object   = 4
+                    OTHERS   = 5.
+
+                IF sy-subrc = 0.
+                  COMMIT WORK.
+                ENDIF.
+
+              ENDIF.
+
+*Save PO Service Header Note for New IT Expense Claim no
+              CLEAR:slines,tlines[],header.
+
+              IF ls_deep-poshnoteset[] IS NOT INITIAL.
+
+*                LOOP AT ls_deep-poshnoteset INTO ls_poshnote.
+*                  len = strlen( ls_poshnote-tline ).
+*                  CLEAR : rowcount,str,startindex,endindex.
+*                  IF len > 132.
+*                    rowcount = ceil( len / 132 ).
+*                  ENDIF.
+*
+*                  IF rowcount IS NOT INITIAL.
+*                    DO rowcount TIMES.
+*                      startindex = startindex * 132.
+*                      endindex = startindex + 132.
+*                      IF endindex > len.
+*                        endindex  = len - startindex.
+*                      ENDIF.
+*                      str = ls_poshnote-tline+startindex(endindex).
+*                      slines-tdformat = '*'.
+*                      slines-tdline =  str.
+*                      APPEND slines TO tlines.
+*                      CLEAR : slines.
+*                      startindex = startindex + 1.
+*                    ENDDO.
+*                  ELSE.
+*                    slines-tdformat = '*'.
+*                    slines-tdline = ls_poshnote-tline.
+*                    APPEND slines TO tlines.
+*                    CLEAR : slines.
+*                  ENDIF.
+*                ENDLOOP.
+
+                LOOP AT ls_deep-poshnoteset INTO ls_poshnote.
+                  len = strlen( ls_poshnote-tline ).
+                  CLEAR : rowcount,str,startindex,endindex.
+                  IF len > 132.
+                    rowcount = ceil( len / 132 ).
+                  ENDIF.
+
+                  IF rowcount IS NOT INITIAL.
+                    DO rowcount TIMES.
+                      IF sy-index = '1'.
+                        startindex = startindex * 132.
+                        endindex = startindex + 132.
+
+                      ELSE.
+
+                        IF  startindex >= len.
+                          EXIT.
+                        ENDIF.
+                        endindex = len - startindex.
+                        IF endindex > 132.
+                          endindex = 132.
+                        ENDIF.
+
+                      ENDIF.
+                      IF endindex > len.
+                        endindex  = len - startindex.
+                      ENDIF.
+                      str = ls_poshnote-tline+startindex(endindex).
+                      slines-tdformat = '*'.
+                      slines-tdline =  str.
+                      APPEND slines TO tlines.
+                      CLEAR : slines.
+
+                      startindex = startindex + endindex.
+*                      startindex = startindex + 1.
+                    ENDDO.
+                  ELSE.
+                    slines-tdformat = '*'.
+                    slines-tdline = ls_poshnote-tline.
+                    APPEND slines TO tlines.
+                    CLEAR : slines.
+                  ENDIF.
+                ENDLOOP.
+
+
+
+
+                IF gv_reqlist1 IS INITIAL.
+                  gv_reqlist1 = ls_deep-itreq_no.
+                ENDIF.
+
+                header-tdobject = 'ZIT_EXP'.
+                CONCATENATE ls_deep-item_doc_id
+                gv_reqlist1
+                INTO header-tdname SEPARATED BY '_'.
+                header-tdid = '004'.
+                header-tdspras = sy-langu.
+
+                CALL FUNCTION 'SAVE_TEXT'
+                  EXPORTING
+                    client   = sy-mandt
+                    header   = header
+                  TABLES
+                    lines    = tlines
+                  EXCEPTIONS
+                    id       = 1
+                    language = 2
+                    name     = 3
+                    object   = 4
+                    OTHERS   = 5.
+
+                IF sy-subrc = 0.
+                  COMMIT WORK.
+                ENDIF.
+
+              ENDIF.
+
+
+*Save Negotiation notes for New IT Expense Claim no
+
+              CLEAR:slines,tlines[],header,len.
+
+              IF ls_deep-zite_subjectset[] IS NOT INITIAL.
+
+*                LOOP AT ls_deep-zite_subjectset INTO ls_ise_subject.
+*
+*                  len = strlen( ls_ise_subject-tline ).
+*                  CLEAR : rowcount,str,startindex,endindex.
+*                  IF len > 132.
+*                    rowcount = ceil( len / 132 ).
+*                  ENDIF.
+*
+*                  IF rowcount IS NOT INITIAL.
+*                    DO rowcount TIMES.
+*                      startindex = startindex * 132.
+*                      endindex = startindex + 132.
+*                      IF endindex > len.
+*                        endindex  = len - startindex.
+*                      ENDIF.
+*                      str = ls_ise_subject-tline+startindex(endindex).
+*                      slines-tdformat = '*'.
+*                      slines-tdline =  str.
+*                      APPEND slines TO tlines.
+*                      CLEAR : slines.
+*                      startindex = startindex + 1.
+*                    ENDDO.
+*                  ELSE.
+*                    slines-tdformat = '*'.
+*                    slines-tdline = ls_ise_subject-tline.
+*                    APPEND slines TO tlines.
+*                    CLEAR : slines.
+*                  ENDIF.
+*                ENDLOOP.
+
+*                slines-tdformat = '*'.
+*                slines-tdline = ls_htext-tline.
+*                APPEND slines TO tlines.
+*                CLEAR : slines.
+*              ENDLOOP.
+
+
+                LOOP AT ls_deep-zite_subjectset INTO ls_ise_subject.
+                  len = strlen( ls_ise_subject-tline ).
+                  CLEAR : rowcount,str,startindex,endindex.
+                  IF len > 132.
+                    rowcount = ceil( len / 132 ).
+                  ENDIF.
+
+                  IF rowcount IS NOT INITIAL.
+                    DO rowcount TIMES.
+                      IF sy-index = '1'.
+                        startindex = startindex * 132.
+                        endindex = startindex + 132.
+
+                      ELSE.
+
+                        IF  startindex >= len.
+                          EXIT.
+                        ENDIF.
+                        endindex = len - startindex.
+                        IF endindex > 132.
+                          endindex = 132.
+                        ENDIF.
+
+                      ENDIF.
+                      IF endindex > len.
+                        endindex  = len - startindex.
+                      ENDIF.
+                      str = ls_ise_subject-tline+startindex(endindex).
+                      slines-tdformat = '*'.
+                      slines-tdline =  str.
+                      APPEND slines TO tlines.
+                      CLEAR : slines.
+
+                      startindex = startindex + endindex.
+*                      startindex = startindex + 1.
+                    ENDDO.
+                  ELSE.
+                    slines-tdformat = '*'.
+                    slines-tdline = ls_ise_subject-tline.
+                    APPEND slines TO tlines.
+                    CLEAR : slines.
+                  ENDIF.
+                ENDLOOP.
+                IF gv_reqlist1 IS INITIAL.
+                  gv_reqlist1 = ls_deep-itreq_no.
+                ENDIF.
+
+                header-tdobject = 'ZIT_EXP'.
+                CONCATENATE ls_deep-item_doc_id
+                gv_reqlist1
+                INTO header-tdname SEPARATED BY '_'.
+                header-tdid = '005'.
+                header-tdspras = sy-langu.
+
+                CALL FUNCTION 'SAVE_TEXT'
+                  EXPORTING
+                    client   = sy-mandt
+                    header   = header
+                  TABLES
+                    lines    = tlines
+                  EXCEPTIONS
+                    id       = 1
+                    language = 2
+                    name     = 3
+                    object   = 4
+                    OTHERS   = 5.
+
+                IF sy-subrc = 0.
+                  COMMIT WORK.
+                ENDIF.
+
+              ENDIF.
+
+            ENDIF.
+
+            copy_data_to_ref(
+            EXPORTING
+              is_data = ls_deep
+            CHANGING
+              cr_data = er_deep_entity ).
+
+            IF ls_deep-msgtype = 'S'.
+              CALL FUNCTION 'ZITE_SEND_MAIL'
+                EXPORTING
+                  gv_subject    = 'IS Expense'
+                  item_doc_id   = ls_deep-item_doc_id
+                  itreq_no      = gv_reqlist1
+                  remarks       = ls_deep-remark
+                  status        = lv_status
+                IMPORTING
+                  gv_msgtype    = ls_deep-msgtype
+                  gv_msg        = ls_deep-msg
+                EXCEPTIONS
+                  no_email      = 1
+                  invalid_input = 2
+                  no_input      = 3
+                  no_approver   = 4
+                  OTHERS        = 5.
+
+            ENDIF.
+
+          ENDIF.
+        ENDIF.
+
+*Approve/Reject Document
+      ELSEIF ls_deep-flag = 'A' OR ls_deep-flag = 'R'.
+
+        IF ls_deep-cio = 'X'.
+          CLEAR : lv_success,lv_error.
+
+          LOOP AT ls_deep-itemset01 INTO ls_item.
+
+            CALL FUNCTION 'ZITE_UPDATE'
+              EXPORTING
+                item_doc_id      = ls_item-item_doc_id
+                itreq_no         = ls_item-itreq_no
+                remarks          = ls_deep-remark
+                lv_aflag         = ls_deep-flag
+              IMPORTING
+                msgtype          = ls_deep-msgtype
+                msg              = ls_deep-msg
+              EXCEPTIONS
+                update_error     = 1
+                no_input         = 2
+                no_data          = 3
+                no_authorization = 4
+                no_status        = 5
+                OTHERS           = 6.
+
+            IF ls_deep-msgtype = 'S' AND lv_success = ''.
+              lv_success = 'X'.
+            ENDIF.
+
+            IF ls_deep-msgtype = 'E'.
+              lv_error = 'X'.
+            ENDIF.
+
+          ENDLOOP.
+
+          IF lv_success = 'X'.
+            ls_deep-msgtype = 'S'.
+          ELSE.
+            ls_deep-msgtype = 'E'.
+            ls_deep-msg = 'Some of the documents are not approved'.
+          ENDIF.
+
+          IF ls_deep-msgtype = 'S'.
+            IF ls_deep-flag = 'A'.
+              ls_deep-msg = 'Document/s Approved Successfully'.
+            ELSEIF ls_deep-flag = 'R'.
+              ls_deep-msg = 'Document/s Rejected Successfully'.
+            ENDIF.
+          ENDIF.
+*Update bacl to the calling system
+          copy_data_to_ref(
+          EXPORTING
+            is_data = ls_deep
+          CHANGING
+            cr_data = er_deep_entity ).
+
+          IF ls_deep-msgtype = 'S'.
+            CALL FUNCTION 'ZITE_SEND_MAIL'
+              EXPORTING
+                gv_subject    = 'IS Expense'
+                item_doc_id   = ls_item-item_doc_id
+                itreq_no      = ls_item-itreq_no
+                remarks       = ls_deep-remark
+                status        = lv_status
+              IMPORTING
+                gv_msgtype    = ls_deep-msgtype
+                gv_msg        = ls_deep-msg
+              EXCEPTIONS
+                no_email      = 1
+                invalid_input = 2
+                no_input      = 3
+                no_approver   = 4
+                OTHERS        = 5.
+
+          ENDIF.
+
+        ELSEIF ls_deep-cio = ''.
+
+          CALL FUNCTION 'ZITE_UPDATE'
+            EXPORTING
+              item_doc_id      = ls_deep-item_doc_id
+              itreq_no         = ls_deep-itreq_no
+              remarks          = ls_deep-remark
+              lv_aflag         = ls_deep-flag
+            IMPORTING
+              msgtype          = ls_deep-msgtype
+              msg              = ls_deep-msg
+            EXCEPTIONS
+              update_error     = 1
+              no_input         = 2
+              no_data          = 3
+              no_authorization = 4
+              no_status        = 5
+              OTHERS           = 6.
+
+          IF sy-subrc <> 0.
+            CASE sy-subrc.
+
+              WHEN '1'.
+                ls_deep-msgtype = 'E'.
+                CONCATENATE 'Error occured while updating document' ls_item-item_doc_id
+                 INTO ls_deep-msg SEPARATED BY space.
+
+              WHEN '2'.
+                ls_deep-msgtype = 'E'.
+                CONCATENATE 'No Inputs received' ls_item-item_doc_id
+                INTO ls_deep-msg SEPARATED BY space.
+              WHEN '3'.
+                ls_deep-msgtype = 'E'.
+                CONCATENATE 'No data found for document' ls_item-item_doc_id
+                      INTO ls_deep-msg SEPARATED BY space.
+
+              WHEN '4'.
+                ls_deep-msgtype = 'E'.
+                ls_deep-msg = 'You are not authorized to perform this task'.
+
+
+              WHEN '5'.
+                ls_deep-msgtype = 'E'.
+                ls_deep-msg = 'No Status master maintained'.
+
+
+              WHEN OTHERS.
+                ls_deep-msgtype = 'E'.
+                CONCATENATE 'Error while updating document ' ls_item-item_doc_id
+                INTO ls_deep-msg SEPARATED BY space.
+
+            ENDCASE.
+
+          ELSE.
+            ls_deep-msgtype = 'S'.
+            IF ls_deep-flag = 'A'.
+              ls_deep-msg = 'Document/s Approved Successfully'.
+            ELSEIF ls_deep-flag = 'R'.
+              ls_deep-msg = 'Document/s Rejected Successfully'.
+            ELSEIF ls_deep-flag = 'S'.
+              ls_deep-msg = 'Document/s Resubmitted Successfully'.
+            ENDIF.
+
+*Update bacl to the calling system
+            copy_data_to_ref(
+            EXPORTING
+              is_data = ls_deep
+            CHANGING
+              cr_data = er_deep_entity ).
+
+          ENDIF.
+
+          IF ls_deep-msgtype = 'S'.
+            CALL FUNCTION 'ZITE_SEND_MAIL'
+              EXPORTING
+                gv_subject    = 'IS Expense'
+                item_doc_id   = ls_deep-item_doc_id
+                itreq_no      = ls_deep-itreq_no
+                remarks       = ls_deep-remark
+                status        = lv_status
+              IMPORTING
+                gv_msgtype    = ls_deep-msgtype
+                gv_msg        = ls_deep-msg
+              EXCEPTIONS
+                no_email      = 1
+                invalid_input = 2
+                no_input      = 3
+                no_approver   = 4
+                OTHERS        = 5.
+
+          ENDIF.
+
+
+        ENDIF.
+
+*Resubmit IT Expense
+      ELSEIF ls_deep-flag = 'S'.  "S = Resubmit
+
+        IF ls_deep-item_doc_id IS NOT INITIAL
+          AND ls_deep-itreq_no IS NOT INITIAL.
+          DATA : ls_header1 TYPE zite_header,
+                 ls_history TYPE zite_shistory.
+          CLEAR :ls_header1,ls_history.
+
+          SELECT SINGLE * FROM zite_header
+            INTO ls_header1
+             WHERE  item_doc_id =  ls_deep-item_doc_id
+                    AND itreq_no = ls_deep-itreq_no.
+
+          IF sy-subrc <> 0.
+
+            ls_deep-msgtype = 'E'.
+            ls_deep-msg = 'No data found for the corresponding document'.
+
+*Update bacl to the calling system
+            copy_data_to_ref(
+            EXPORTING
+              is_data = ls_deep
+            CHANGING
+              cr_data = er_deep_entity ).
+
+            EXIT.
+
+          ENDIF.
+
+
+          UPDATE zite_header
+          SET status = '00'
+          WHERE item_doc_id = ls_deep-item_doc_id
+          AND itreq_no =  ls_deep-itreq_no.
+          IF sy-subrc = 0.
+
+            SELECT SINGLE * FROM zite_shistory
+              INTO ls_history
+              WHERE item_doc_id = ls_deep-item_doc_id
+            AND itreq_no =  ls_deep-itreq_no.
+
+            IF sy-subrc = 0.
+
+              DELETE FROM zite_shistory
+              WHERE item_doc_id = ls_deep-item_doc_id
+              AND itreq_no =  ls_deep-itreq_no.
+              IF sy-subrc = 0.
+
+                COMMIT WORK.
+
+                ls_deep-msgtype = 'S'.
+                ls_deep-msg = 'Document Resubmitted successfully,Saved as Draft'.
+
+*Update bacl to the calling system
+                copy_data_to_ref(
+                EXPORTING
+                  is_data = ls_deep
+                CHANGING
+                  cr_data = er_deep_entity ).
+
+              ELSE.
+
+                ls_deep-msgtype = 'S'.
+                ls_deep-msg = 'Unable to Delete document approval history'.
+
+*Update bacl to the calling system
+                copy_data_to_ref(
+                EXPORTING
+                  is_data = ls_deep
+                CHANGING
+                  cr_data = er_deep_entity ).
+
+              ENDIF.
+
+            ELSE.
+
+              COMMIT WORK.
+
+              ls_deep-msgtype = 'S'.
+              ls_deep-msg = 'Document Resubmitted successfully,Saved as Draft'.
+
+*Update bacl to the calling system
+              copy_data_to_ref(
+              EXPORTING
+                is_data = ls_deep
+              CHANGING
+                cr_data = er_deep_entity ).
+            ENDIF.
+
+          ELSE.
+
+            ls_deep-msgtype = 'E'.
+            ls_deep-msg = 'Unable to update document status'.
+
+*Update bacl to the calling system
+            copy_data_to_ref(
+            EXPORTING
+              is_data = ls_deep
+            CHANGING
+              cr_data = er_deep_entity ).
+
+          ENDIF.
+
+        ELSE.
+
+          ls_deep-msgtype = 'E'.
+          ls_deep-msg = 'No inputs receievd'.
+
+*Update bacl to the calling system
+          copy_data_to_ref(
+          EXPORTING
+            is_data = ls_deep
+          CHANGING
+            cr_data = er_deep_entity ).
+
+        ENDIF.
+
+
+*Create Purchase Order
+      ELSEIF ls_deep-flag = 'P'.
+
+        DATA : lt_poitem TYPE zite_po_tab,
+               ls_poitem TYPE zite_po_str.
+
+        DATA : lv_matnr,lv_service.
+
+        CLEAR : lv_matnr,lv_service,ls_poitem,lt_poitem[].
+
+        READ TABLE ls_deep-itemset01 INTO ls_item INDEX 1 .
+        IF sy-subrc = 0.
+          IF ls_item-material_no IS NOT INITIAL.
+            lv_matnr = 'X'.
+          ELSEIF ls_item-service_no IS NOT INITIAL.
+            lv_service = 'X'.
+          ENDIF.
+        ENDIF.
+
+        LOOP AT ls_deep-itemset01 INTO ls_item.
+
+          ls_poitem-item_no       = ls_item-item_no.
+          ls_poitem-item_desc     = ls_item-item_desc.
+          ls_poitem-material_no   = ls_item-material_no.
+          ls_poitem-service_no    = ls_item-service_no.
+          ls_poitem-expected_date = ls_item-expected_date.
+          ls_poitem-quantity      = ls_item-quantity.
+          ls_poitem-lifnr         = ls_item-lifnr.
+          ls_poitem-ite_location  = ls_item-itelocation.
+          ls_poitem-knttp         = ls_item-knttp.
+          ls_poitem-netpr         = ls_item-netpr.
+          ls_poitem-hkont         = ls_item-hkont.
+          ls_poitem-anln1         = ls_item-anln1.
+          ls_poitem-stge_loc     = ls_item-stge_loc.
+
+          IF ls_poitem-material_no IS NOT INITIAL AND ls_poitem-ite_location IS INITIAL.
+            SELECT SINGLE werks FROM marc
+              INTO ls_poitem-ite_location
+              WHERE matnr =  ls_poitem-material_no.
+          ENDIF.
+
+          IF ls_poitem-service_no IS NOT INITIAL AND ls_poitem-item_desc IS INITIAL.
+            SELECT SINGLE asktx FROM asmdt
+              INTO ls_poitem-item_desc
+              WHERE asnum =  ls_poitem-service_no
+              AND spras = sy-langu.
+          ENDIF.
+
+          IF ls_poitem-service_no IS NOT INITIAL.
+            ls_poitem-knttp = 'K'.
+          ENDIF.
+
+
+          APPEND ls_poitem TO lt_poitem.
+          CLEAR ls_poitem.
+
+        ENDLOOP.
+
+        IF lv_matnr  = 'X'.
+
+          DATA : lt_error TYPE zite_po_error_tab,
+                 ls_error TYPE zite_po_error_str.
+*
+          CALL FUNCTION 'ZITE_CREATE_PO_MATERIAL'
+            EXPORTING
+              item_doc_id = ls_deep-item_doc_id
+              itreq_no    = ls_deep-itreq_no
+            IMPORTING
+              gv_msgtype  = ls_deep-msgtype
+              gv_msg      = ls_deep-msg
+            TABLES
+              item        = lt_poitem
+              it_error    = lt_error
+            EXCEPTIONS
+              no_data     = 1
+              OTHERS      = 2.
+
+
+
+
+        ELSEIF lv_service = 'X'.
+
+          CALL FUNCTION 'ZITE_CREATE_PO_SERVICE'
+            EXPORTING
+              item_doc_id = ls_deep-item_doc_id
+              itreq_no    = ls_deep-itreq_no
+            IMPORTING
+              gv_msgtype  = ls_deep-msgtype
+              gv_msg      = ls_deep-msg
+            TABLES
+              item        = lt_poitem
+              it_error    = lt_error
+            EXCEPTIONS
+              no_data     = 1
+              no_input    = 2
+              OTHERS      = 3.
+
+        ENDIF.
+
+        IF lt_error[] IS NOT INITIAL.
+          LOOP AT lt_error INTO ls_error.
+            ls_item-msgtype = 'E'.
+            ls_item-msg = ls_error-msg.
+            APPEND ls_item TO ls_deep-itemset01.
+          ENDLOOP.
+        ENDIF.
+
+*Update bacl to the calling system
+        copy_data_to_ref(
+        EXPORTING
+          is_data = ls_deep
+        CHANGING
+          cr_data = er_deep_entity ).
+
+      ELSEIF   ls_deep-flag = 'X'.
+
+        UPDATE zite_header
+        SET status = 'X'
+        WHERE item_doc_id = ls_deep-item_doc_id
+        AND itreq_no = ls_deep-itreq_no.
+
+        IF sy-subrc = 0.
+
+          ls_deep-msgtype = 'S'.
+          ls_deep-msg = 'Expense closed successfully'.
+
+        ELSE.
+
+          ls_deep-msgtype = 'E'.
+          ls_deep-msg = 'Unable to update document status'.
+
+        ENDIF.
+
+*Update bacl to the calling system
+        copy_data_to_ref(
+        EXPORTING
+          is_data = ls_deep
+        CHANGING
+          cr_data = er_deep_entity ).
+
+      ENDIF.
+
+
+    WHEN 'validationSet'.
+
+      TRY.
+
+          io_data_provider->read_entry_data( IMPORTING es_data = ls_deep1 ).
+
+        CATCH cx_root INTO lx_root.
+
+
+
+
+
+
+          lv_subrc = 1001.
+          lv_exc_msg = lx_root->if_message~get_text( ).
+
+      ENDTRY.
+      IF sy-subrc = 0.
+
+
+
+        " Begin of Changes <STRAVIS><13.07.2018 11:05:11>
+
+
+
+** material.
+
+        it_item_temp = ls_deep1-itemset.
+        IF it_item_temp IS NOT INITIAL.
+          SELECT matnr FROM mara INTO TABLE lt_mara
+                 FOR ALL ENTRIES IN it_item_temp
+                 WHERE matnr = it_item_temp-material_no.
+
+** Vendor
+
+          SELECT lifnr name1
+            FROM lfa1
+            INTO CORRESPONDING FIELDS OF TABLE lt_lfa1
+            FOR ALL ENTRIES IN it_item_temp
+            WHERE lifnr = it_item_temp-lifnr
+          AND loevm <> 'X'
+          AND sperr <> 'X'
+          AND sperm <> 'X'.
+
+
+
+
+
+*** Plant Location.
+
+          DATA: lv_plant TYPE char4.
+
+          LOOP AT it_item_temp INTO wa_item_temp.
+            lv_plant = wa_item_temp-itelocation.
+            SELECT SINGLE * FROM zite_plant INTO ls_zite_plant
+              WHERE name1 = lv_plant.
+
+            APPEND ls_zite_plant TO lt_zite_plant.
+          ENDLOOP.
+          CLEAR:ls_zite_plant ,lv_plant,wa_item_temp .
+
+*    if lt_zite_plant is NOT INITIAL.
+*          SELECT WERKS NAME1
+*            FROM T001W
+*            INTO CORRESPONDING FIELDS OF TABLE LT_T001W
+*            FOR ALL ENTRIES IN lt_zite_plant
+*            WHERE WERKS = lt_zite_plant-werks
+*            AND SPRAS = SY-LANGU.
+*endif.
+
+
+*** Account Assign.
+
+          SELECT knttp knttx
+            FROM t163i
+            INTO CORRESPONDING FIELDS OF TABLE lt_t163i
+            FOR ALL ENTRIES IN it_item_temp
+            WHERE knttp = it_item_temp-knttp
+            AND    spras = sy-langu.
+
+
+*** G/L Account.
+
+          SELECT * FROM zite_gl
+            INTO TABLE lt_zite_gl
+            FOR ALL ENTRIES IN it_item_temp
+            WHERE hkont = it_item_temp-hkont.
+
+
+          SELECT * FROM zite_slocation
+            INTO TABLE it_zite_slocation
+            FOR ALL ENTRIES IN it_item_temp
+            WHERE skey = it_item_temp-stge_loc.
+
+          LOOP AT it_item_temp INTO wa_item_temp.
+            lv_row = sy-tabix.
+            CONDENSE lv_row.
+
+            READ TABLE lt_mara REFERENCE INTO ref_ls_mara WITH KEY matnr = wa_item_temp-material_no.
+            IF sy-subrc NE 0.
+
+              CONCATENATE ls_deep-msg 'In row' lv_row  'Material no' wa_item_temp-material_no 'is not valid' ','
+              INTO ls_deep-msg  SEPARATED BY space.
+
+            ENDIF.
+
+            READ TABLE lt_lfa1 REFERENCE INTO ref_ls_lfa1 WITH KEY lifnr = wa_item_temp-lifnr.
+            IF sy-subrc NE 0.
+
+              SHIFT wa_item_temp-lifnr LEFT DELETING LEADING '0' .
+              CONCATENATE ls_deep-msg 'In row' lv_row  'Vendor' wa_item_temp-lifnr 'is not valid' ','
+              INTO ls_deep-msg SEPARATED BY space.
+
+            ENDIF.
+
+            lv_plant = wa_item_temp-itelocation.
+            READ TABLE lt_zite_plant REFERENCE INTO ref_ls_zite_plant WITH KEY name1 = lv_plant.
+            IF sy-subrc NE 0.
+
+              CONCATENATE ls_deep-msg 'In row' lv_row  'Plant' wa_item_temp-itelocation 'is not valid' ','
+                             INTO ls_deep-msg SEPARATED BY space.
+
+            ENDIF.
+
+            READ TABLE lt_t163i REFERENCE INTO ref_ls_t163i WITH KEY knttp = wa_item_temp-knttp.
+            IF sy-subrc NE 0.
+
+              CONCATENATE ls_deep-msg 'In row' lv_row  'Account assignment' wa_item_temp-knttp 'is not valid' ','
+                             INTO ls_deep-msg SEPARATED BY space.
+
+            ENDIF.
+
+            READ TABLE lt_zite_gl REFERENCE INTO ref_ls_zite_gl WITH KEY hkont = wa_item_temp-hkont.
+            IF sy-subrc NE 0.
+
+              CONCATENATE ls_deep-msg 'In row' lv_row  'G/L Account' wa_item_temp-hkont 'is not valid' ','
+               INTO ls_deep-msg SEPARATED BY space.
+
+            ENDIF.
+
+            READ TABLE it_zite_slocation REFERENCE INTO reff_wa_zite_slocation WITH KEY skey = wa_item_temp-stge_loc.
+            IF sy-subrc NE 0.
+
+              CONCATENATE ls_deep-msg 'In row' lv_row  'Storage Location' wa_item_temp-stge_loc 'is not valid' ','
+               INTO ls_deep-msg SEPARATED BY space.
+
+            ENDIF.
+
+
+
+            clear lv_row.
+
+          ENDLOOP.
+
+          IF ls_deep-msg IS NOT INITIAL.
+            ls_deep-msgtype = 'E'.
+          ENDIF.
+
+          copy_data_to_ref(
+       EXPORTING
+         is_data = ls_deep
+       CHANGING
+         cr_data = er_deep_entity ).
+
+        ENDIF. ""
+        " End of Changes <STRAVIS><13.07.2018 11:05:11>
+
+
+
+      ENDIF.
+    WHEN OTHERS.
+
+
+  ENDCASE.
+
+
+
+
+ENDMETHOD.
